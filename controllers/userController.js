@@ -2,6 +2,7 @@ import User from "../models/user.js"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
+import e from "express"
 
 dotenv.config()
 
@@ -60,7 +61,8 @@ export function loginUser(req,res){
                         isEmailverified:user.isEmailVerified,
                         image:user.image
 
-                      },process.env.JWT_SECRET)
+                      },process.env.JWT_SECRET,
+                      { expiresIn:req.body.rememberMe ? '30d' : '48h'})
 
                     res.json({
                         message:"login successfully",
