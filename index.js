@@ -11,26 +11,26 @@ import contactRouter from './router/contactRouter.js'
 
 dotenv.config()
 
+const mongoURI = process.env.MONGO_URI
 
-
-const mongoURI=process.env.MONGO_URI
-
-mongoose.connect(mongoURI).then(
-    ()=>{console.log("Connected to Mongodb")
-}).catch(
-    ()=>{console.log("Error connecting to mongodb")
+mongoose.connect(mongoURI).then(() => {
+    console.log("Connected to Mongodb")
+}).catch(() => {
+    console.log("Error connecting to mongodb")
 })
 
-const app=express()
+const app = express()
+
 app.use(cors())
+app.use(express.json())
 app.use(authorizeUser)
 
-app.use(express.json())
-app.use("/api/users",userRouter)
-app.use("/api/products",productRouter)
-app.use("/api/orders",orderRouter)
-app.use("/api/stats", statsRouter);
-app.use("/api/contact", contactRouter);
+app.use("/api/users", userRouter)
+app.use("/api/products", productRouter)
+app.use("/api/orders", orderRouter)
+app.use("/api/stats", statsRouter)
+app.use("/api/contact", contactRouter)
 
-
-app.listen(5000,()=>{console.log("server is running on port 5000")})
+app.listen(5000, () => {
+    console.log("server is running on port 5000")
+})
