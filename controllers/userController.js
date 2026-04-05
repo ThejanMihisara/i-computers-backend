@@ -8,14 +8,11 @@ import axios from "axios";
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-	service: "gmail",
-	host: "smtp.gmail.com",
-	port: 587,
-	secure: false,
-	auth: {
-		user: "thejanmihisara2004@gmail.com",
-		pass: process.env.GMAIL_APP_PASSWORD,
-	},
+  service: "gmail",
+  auth: {
+    user: "thejanmihisara2004@gmail.com",
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
 });
 
 export function createUser(req, res) {
@@ -199,49 +196,33 @@ export function isAdmin(req) {
 }
 
 export async function sendOTP(req, res) {
-	try {
-		const user = await User.findOne({ email: req.body.email });
+  try {
+    const user = await User.findOne({ email: req.body.email });
 
-		if (user == null) {
-			res.status(404).json({ message: "User with given email not found" });
-			return;
-		}
+    if (user == null) {
+      return res.status(404).json({ message: "User with given email not found" });
+    }
 
-		// Generate and send OTP logic here
-		//otp between 10000 and 99999
-		const otp = Math.floor(10000 + Math.random() * 90000);
+    const otp = Math.floor(10000 + Math.random() * 90000);
 
-		await OTP.deleteMany({ email: req.body.email });
+    const message = {
+      from: "thejanmihisara2004@gmail.com",
+      to: req.body.email,
+      subject: "Your OTP for password reset",
+      text: `Your OTP for password reset is ${otp}. It is valid for 10 minutes.`,
+    };
 
-		const newOTP = new OTP({
-			email: req.body.email,
-			otp: otp,
-		});
+    const info = await transporter.sendMail(message);
 
-		await newOTP.save();
+    await OTP.deleteMany({ email: req.body.email });
+    await new OTP({ email: req.body.email, otp }).save();
 
-		const message = {
-			from: "thejanmihisara2004@gmail.com",
-			to: req.body.email,
-			subject: "Your OTP for password reset",
-			text:
-				"Your OTP for password reset is " +
-				otp +
-				". It is valid for 10 minutes.",
-		};
-
-		transporter.sendMail(message, (error, info) => {
-			if (error) {
-				console.log("Error sending email", error);
-				res.status(500).json({ message: "Error sending OTP", error: error });
-			} else {
-				console.log("Email sent successfully", info.response);
-				res.json({ message: "OTP sent successfully" });
-			}
-		});
-	} catch (error) {
-		res.status(500).json({ message: "Error sending OTP", error: error });
-	}
+    console.log("Email sent successfully", info.response);
+    return res.json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.log("Error sending email", error);
+    return res.status(500).json({ message: "Error sending OTP", error });
+  }
 }
 
 export async function verifyOTP(req, res) {
