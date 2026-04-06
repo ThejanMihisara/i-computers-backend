@@ -9,9 +9,11 @@ import orderRouter from './router/orderRouter.js'
 import statsRouter from './router/statsRouter.js'
 import contactRouter from './router/contactRouter.js'
 
+
 dotenv.config()
 
 const mongoURI = process.env.MONGO_URI
+
 
 mongoose.connect(mongoURI).then(() => {
     console.log("Connected to Mongodb")

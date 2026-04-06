@@ -3,17 +3,13 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import OTP from "../models/otp.js";
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import axios from "axios";
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "thejanmihisara2004@gmail.com",
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+
 
 export function createUser(req, res) {
 	const hashedPassword = bcrypt.hashSync(req.body.password, 10);
@@ -199,29 +195,42 @@ export async function sendOTP(req, res) {
   try {
     const user = await User.findOne({ email: req.body.email });
 
-    if (user == null) {
-      return res.status(404).json({ message: "User with given email not found" });
+    if (!user) {
+      return res.status(404).json({
+        message: "User with given email not found",
+      });
     }
 
     const otp = Math.floor(10000 + Math.random() * 90000);
 
-    const message = {
-      from: "thejanmihisara2004@gmail.com",
+    const msg = {
       to: req.body.email,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL,
+        name: process.env.SENDGRID_FROM_NAME,
+      },
       subject: "Your OTP for password reset",
-      text: `Your OTP for password reset is ${otp}. It is valid for 10 minutes.`,
+      text: `Your OTP is ${otp}`,
+      html: `<h2>Your OTP is ${otp}</h2>`,
     };
 
-    const info = await transporter.sendMail(message);
+    await sgMail.send(msg);
 
     await OTP.deleteMany({ email: req.body.email });
-    await new OTP({ email: req.body.email, otp }).save();
 
-    console.log("Email sent successfully", info.response);
-    return res.json({ message: "OTP sent successfully" });
+    await new OTP({
+      email: req.body.email,
+      otp,
+    }).save();
+
+    res.json({ message: "OTP sent successfully" });
+
   } catch (error) {
-    console.log("Error sending email", error);
-    return res.status(500).json({ message: "Error sending OTP", error });
+    console.log(error);
+    res.status(500).json({
+      message: "Error sending OTP",
+      error,
+    });
   }
 }
 
